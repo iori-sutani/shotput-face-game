@@ -12,7 +12,7 @@ const App: React.FC = () => {
     setDistance(null); // Reset distance display
     // Simulate power calculation delay or just throw
     // Hammer throw distances are much longer (World Record ~86m)
-    const p = Math.random() * 15 + 15; // 15 .. 30
+    const p = Math.random() * 15 + 10; // 10 .. 25
     setPower(p);
   };
 
