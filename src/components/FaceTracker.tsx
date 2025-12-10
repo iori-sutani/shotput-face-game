@@ -10,7 +10,8 @@ type Props = {
 
 const FaceTracker: React.FC<Props> = ({ onScoreUpdate, isActive }) => {
   const webcamRef = useRef<Webcam>(null);
-  const [debugInfo, setDebugInfo] = useState<string>('Initializing...');
+  // const [debugInfo, setDebugInfo] = useState<string>('Initializing...'); // Removed in favor of metrics
+  const [metrics, setMetrics] = useState({ mouth: 0, eye: 0, total: 0 });
   const isActiveRef = useRef(isActive);
 
   // Update ref when prop changes to use in closure
@@ -82,16 +83,15 @@ const FaceTracker: React.FC<Props> = ({ onScoreUpdate, isActive }) => {
             onScoreUpdate(totalScore);
         }
 
-        // ログ出力（数値を見やすく整形）
-        const info = `
-Mouth: ${mouthOpen.toFixed(3)} -> Score: ${(mouthScore * 100).toFixed(0)}%
-Eye:   ${eyeOpen.toFixed(3)} -> Score: ${(eyeScore * 100).toFixed(0)}%
-Total: ${(totalScore * 100).toFixed(0)}%
-        `.trim();
-        
-        setDebugInfo(info);
+        setMetrics({
+            mouth: mouthScore * 100,
+            eye: eyeScore * 100,
+            total: totalScore * 100
+        });
+
       } else {
-        setDebugInfo('Face not detected');
+        // setDebugInfo('Face not detected');
+        setMetrics({ mouth: 0, eye: 0, total: 0 });
         if (onScoreUpdate) onScoreUpdate(0);
       }
     });
@@ -111,17 +111,91 @@ Total: ${(totalScore * 100).toFixed(0)}%
     }
   }, []);
 
-  // 非アクティブ時は表示を薄くするなどのUI調整
   return (
-    <div className={`absolute top-0 left-0 bg-black/80 text-white p-4 rounded m-4 z-50 font-mono text-sm pointer-events-auto transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-30'}`}>
-      <h3 className="font-bold mb-2">Face Tracker {isActive ? '(Active)' : '(Paused)'}</h3>
-      <div className="mb-4">
-        <Webcam
-          ref={webcamRef}
-          style={{ width: 200, height: 150, transform: "scaleX(-1)" }} // 鏡のように反転
-        />
-      </div>
-      <pre className="whitespace-pre-wrap">{debugInfo}</pre>
+    <div className={`absolute top-4 left-4 z-50 transition-all duration-500 ${isActive ? 'opacity-100 translate-x-0' : 'opacity-40 -translate-x-4 scale-90 origin-top-left'}`}>
+        {/* Main Container */}
+        <div className="relative bg-slate-900/90 border-2 border-yellow-500/50 rounded-xl p-3 shadow-[0_0_20px_rgba(234,179,8,0.2)] backdrop-blur-sm w-[280px] overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex justify-between items-center mb-2 border-b border-white/10 pb-2">
+                <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full shadow-[0_0_10px_currentColor] ${isActive ? 'bg-green-500 text-green-500 animate-pulse' : 'bg-red-500 text-red-500'}`}></div>
+                    <span className="text-xs font-black text-white tracking-widest italic">FACE SYSTEM</span>
+                </div>
+                <span className="text-[10px] text-yellow-500 font-mono opacity-70">REC ●</span>
+            </div>
+
+            {/* Camera View */}
+            <div className="relative rounded-lg overflow-hidden border border-white/20 mb-4 bg-black aspect-video group">
+                <Webcam
+                    ref={webcamRef}
+                    className="w-full h-full object-cover opacity-80"
+                    style={{ transform: "scaleX(-1)" }}
+                    videoConstraints={{ width: 320, height: 240 }}
+                />
+                {/* Overlay Grid */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+                
+                {/* Face Target Frame (Decorative) */}
+                <div className="absolute inset-4 border border-cyan-500/30 rounded-lg opacity-50 pointer-events-none">
+                    <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-cyan-400"></div>
+                    <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-cyan-400"></div>
+                    <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-cyan-400"></div>
+                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-400"></div>
+                </div>
+                
+                {/* Scanning Text */}
+                <div className="absolute top-2 right-2 text-[10px] text-cyan-400 font-mono animate-pulse bg-black/50 px-1 rounded">
+                    SCANNING...
+                </div>
+            </div>
+
+            {/* Metrics */}
+            <div className="space-y-4">
+                {/* Total Power */}
+                <div>
+                    <div className="flex justify-between items-end mb-1">
+                        <span className="text-sm font-black text-white italic tracking-wider">TOTAL POWER</span>
+                        <span className={`text-3xl font-black font-mono tracking-tighter ${metrics.total > 80 ? 'text-red-500 animate-pulse' : metrics.total > 50 ? 'text-yellow-400' : 'text-cyan-400'}`}>
+                            {metrics.total.toFixed(0)}<span className="text-sm ml-1 opacity-70">%</span>
+                        </span>
+                    </div>
+                    <div className="h-6 bg-black/50 rounded-sm overflow-hidden border border-white/10 relative">
+                        {/* Background Grid for Bar */}
+                        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:10px_100%]"></div>
+                        
+                        <div 
+                            className={`h-full transition-all duration-100 ease-out shadow-[0_0_15px_currentColor] ${metrics.total > 80 ? 'bg-gradient-to-r from-orange-600 to-red-600 text-red-500' : 'bg-gradient-to-r from-cyan-600 to-blue-500 text-cyan-500'}`}
+                            style={{ width: `${metrics.total}%` }}
+                        ></div>
+                    </div>
+                </div>
+
+                {/* Details (Small) */}
+                <div className="grid grid-cols-2 gap-3">
+                    {/* Mouth */}
+                    <div className="bg-white/5 p-2 rounded border border-white/5">
+                        <div className="flex justify-between text-[10px] text-gray-400 uppercase mb-1 font-bold">
+                            <span>Mouth</span>
+                            <span>{metrics.mouth.toFixed(0)}%</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-yellow-500 transition-all duration-100" style={{ width: `${metrics.mouth}%` }}></div>
+                        </div>
+                    </div>
+                    {/* Eye */}
+                    <div className="bg-white/5 p-2 rounded border border-white/5">
+                        <div className="flex justify-between text-[10px] text-gray-400 uppercase mb-1 font-bold">
+                            <span>Eyes</span>
+                            <span>{metrics.eye.toFixed(0)}%</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-pink-500 transition-all duration-100" style={{ width: `${metrics.eye}%` }}></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
   );
 };
