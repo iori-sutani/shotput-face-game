@@ -43,7 +43,7 @@ const ShotPutScene: React.FC<Props> = ({ power, onLand, onThrow }) => {
     // --- Scene Setup ---
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb); // Sky blue
-    scene.fog = new THREE.Fog(0x87ceeb, 20, 100);
+    scene.fog = new THREE.Fog(0x87ceeb, 20, 150);
 
     const camera = new THREE.PerspectiveCamera(60, mount.clientWidth / mount.clientHeight, 0.1, 500);
     camera.position.set(-8, 5, 12); // Slightly further back

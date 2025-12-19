@@ -20,13 +20,14 @@ export const setupLighting = (scene: THREE.Scene) => {
 // --- Environment (Ground, Walls, Cage, Lines) ---
 export const setupEnvironment = (scene: THREE.Scene) => {
   // Ground (Grass)
-  const groundGeo = new THREE.PlaneGeometry(200, 100);
+  const groundGeo = new THREE.PlaneGeometry(400, 100);
   const groundMat = new THREE.MeshStandardMaterial({ 
     color: 0x3b7d3b,
     roughness: 0.8,
   });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
+  ground.position.set(100, 0, 0); // Shift ground forward to cover more distance
   ground.receiveShadow = true;
   scene.add(ground);
 
@@ -61,7 +62,7 @@ export const setupEnvironment = (scene: THREE.Scene) => {
 
   // Distance Lines
   const lineGroup = new THREE.Group();
-  for (let i = 5; i <= 100; i += 5) {
+  for (let i = 5; i <= 120; i += 5) {
     const isMajor = i % 10 === 0;
     const lineWidth = isMajor ? 0.3 : 0.1;
     const lineOpacity = isMajor ? 0.8 : 0.4;
